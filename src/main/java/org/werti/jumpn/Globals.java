@@ -1,5 +1,6 @@
 package org.werti.jumpn;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Server;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -11,9 +12,12 @@ import java.util.logging.Logger;
  */
 public class Globals
 {
-  static public JavaPlugin plugin;
+  public static JavaPlugin plugin;
 
-  static public Server bukkitServer;
+  public static Server bukkitServer;
 
-  static public Logger logger;
+  public static Logger logger;
+
+  public static String ChatPrefix = String.format("%s[%sJumpN%s]", ChatColor.GRAY, ChatColor.GREEN, ChatColor.GRAY);
+
 }

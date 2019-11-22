@@ -4,3 +4,11 @@ description: JumpNRun-Plugin
 author: Werti
 main: org.werti.jumpn.Main
 api-version: "1.14"
+
+commands:
+  jumpn:
+    description: Create A self-generated jump'n run
+    usage: /jumpn
+    permission: jumpn.use
+    aliases:
+      - jn

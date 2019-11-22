@@ -1,6 +1,8 @@
 package org.werti.jumpn;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.werti.jumpn.Commands.CommandJumpN;
 
+import java.util.Objects;
 import java.util.logging.Logger;
 
 /// Aufgabenstellung
@@ -22,6 +24,7 @@ public class Main extends JavaPlugin
     logger.info("Enabling JumpN...");
 
     logger.info("Setting Globals..");
+
     Globals.plugin = this;
     Globals.bukkitServer = this.getServer();
     Globals.logger = logger;
@@ -36,4 +39,10 @@ public class Main extends JavaPlugin
 
     Globals.logger.info("JumpN is now disabled!");
   }
+
+  public void registerCommands()
+  {
+    Objects.requireNonNull(this.getCommand("jumpn")).setExecutor(new CommandJumpN());
+  }
+
 }
