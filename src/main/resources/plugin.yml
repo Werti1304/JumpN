@@ -1,0 +1,6 @@
+name: JumpN
+version: "0.1"
+description: JumpNRun-Plugin
+author: Werti
+main: org.werti.jumpn.Main
+api-version: "1.14"
