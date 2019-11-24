@@ -2,10 +2,12 @@ package org.werti.jumpn;
 
 import com.google.gson.internal.$Gson$Preconditions;
 import jdk.internal.jline.internal.Nullable;
+import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
 import sun.tools.java.Environment;
 
 import java.util.ArrayList;
@@ -80,21 +82,26 @@ public class JumpNPlayer
     return player.getWorld();
   }
 
+  public Vector toVector()
+  {
+    return player.getLocation().toVector();
+  }
+
   public enum MessageType
   {
-    Info(Color.GRAY),
-    Positive(Color.GREEN),
-    Warning(Color.ORANGE),
-    Error(Color.RED);
+    Info(ChatColor.GRAY),
+    Positive(ChatColor.GREEN),
+    Warning(ChatColor.RED),
+    Error(ChatColor.DARK_RED);
 
-    private Color color;
+    private ChatColor color;
 
-    MessageType(org.bukkit.Color color)
+    MessageType(ChatColor color)
     {
       this.color = color;
     }
 
-    public Color getColor()
+    public ChatColor getColor()
     {
       return color;
     }

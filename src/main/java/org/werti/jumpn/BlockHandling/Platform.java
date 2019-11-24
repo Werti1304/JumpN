@@ -24,7 +24,16 @@ public class Platform
   {
     PlatformConfiguration platformConfiguration = PlatformConfiguration.GetRandom();
     Direction direction = Direction.GetRandom();
-    SidewaysDirection sidewaysDirection = SidewaysDirection.GetRandom();
+    SidewaysDirection sidewaysDirection;
+
+    if(platformConfiguration.getSidewaysOffset() == 0)
+    {
+      sidewaysDirection = SidewaysDirection.None;
+    }
+    else
+    {
+      sidewaysDirection = SidewaysDirection.GetRandom();
+    }
 
     Globals.debug(String.format("Platform generated at Offsets:\nForward:%d\nSideways:%d\nHeight:%d\nDirection:%s\nSideways Direction:%s",
                                 platformConfiguration.forwardOffset,
@@ -42,10 +51,12 @@ public class Platform
   public enum PlatformConfiguration
   {
     // TODO: More platforms
-    J1(1,0,0,1),
-    J2(2,0,0,5),
-    J3(3,0,0,10),
-    J4(4,0,0,1),
+    J1(2,0,0,5),
+    J2(3,0,0,10),
+    J3(4,0,0,2),
+    J4(2,1,0,3),
+    J5(3,1,0,8),
+    J6(4,1,0,5)
     ;
 
     int forwardOffset;
@@ -136,16 +147,18 @@ public class Platform
   public enum SidewaysDirection
   {
     Left,
-    Right
+    Right,
+    None
     ;
 
     private static final List<SidewaysDirection> LIST = Collections.unmodifiableList(Arrays.asList(values()));
     private static final int SIZE = LIST.size();
     private static final Random RANDOM = new Random();
 
+    // Return Left or Right random, None is not needed
     public static SidewaysDirection GetRandom()
     {
-      return LIST.get(RANDOM.nextInt(SIZE));
+      return LIST.get(RANDOM.nextInt(SIZE - 1));
     }
   }
 }

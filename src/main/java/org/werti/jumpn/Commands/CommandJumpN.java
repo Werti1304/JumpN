@@ -5,6 +5,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import org.werti.jumpn.Globals;
 import org.werti.jumpn.JumpN;
 import org.werti.jumpn.JumpNPlayer;
 
@@ -35,7 +36,10 @@ public class CommandJumpN implements CommandExecutor
 
     JumpN jumpN = new JumpN(jumpNPlayer);
 
-    jumpN.SetNextPlatform();
+    if(!jumpN.SetNextPlatform())
+    {
+      Globals.debug("Couldn't set new platform!");
+    }
 
     return true;
   }
