@@ -12,3 +12,7 @@ commands:
     permission: jumpn.use
     aliases:
       - jn
+  test:
+    description: Test-Command for just.. anything(debug-wise)
+    usage: /test
+    permission: jumpn.admin

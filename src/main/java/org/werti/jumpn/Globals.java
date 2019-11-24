@@ -2,6 +2,7 @@ package org.werti.jumpn;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Server;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.logging.Logger;
@@ -16,8 +17,25 @@ public class Globals
 
   public static Server bukkitServer;
 
+  public static ConsoleCommandSender consoleCommandSender;
+
   public static Logger logger;
 
   public static String ChatPrefix = String.format("%s[%sJumpN%s]", ChatColor.GRAY, ChatColor.GREEN, ChatColor.GRAY);
+
+  // Overwrites log-finer
+  public static boolean DEBUG = true;
+
+  public static void debug(String message)
+  {
+    if(DEBUG)
+    {
+      consoleCommandSender.sendMessage(ChatColor.LIGHT_PURPLE + message);
+    }
+    else
+    {
+      logger.finer(message);
+    }
+  }
 
 }

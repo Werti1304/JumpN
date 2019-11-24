@@ -3,6 +3,8 @@ package org.werti.jumpn;
 import com.google.gson.internal.$Gson$Preconditions;
 import jdk.internal.jline.internal.Nullable;
 import org.bukkit.Color;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import sun.tools.java.Environment;
 
@@ -63,12 +65,22 @@ public class JumpNPlayer
     this.player = player;
   }
 
-  public Player GetPlayer()
+  public Player getPlayer()
   {
     return player;
   }
 
-  enum MessageType
+  public Location getLocation()
+  {
+    return player.getLocation();
+  }
+
+  public World getWorld()
+  {
+    return player.getWorld();
+  }
+
+  public enum MessageType
   {
     Info(Color.GRAY),
     Positive(Color.GREEN),

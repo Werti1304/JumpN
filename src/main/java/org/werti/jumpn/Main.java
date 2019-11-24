@@ -1,6 +1,7 @@
 package org.werti.jumpn;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.werti.jumpn.Commands.CommandJumpN;
+import org.werti.jumpn.Commands.CommandTest;
 
 import java.util.Objects;
 import java.util.logging.Logger;
@@ -23,11 +24,14 @@ public class Main extends JavaPlugin
 
     logger.info("Enabling JumpN...");
 
-    logger.info("Setting Globals..");
+    logger.info("Registering commands..");
+    registerCommands();
 
+    logger.info("Setting Globals..");
     Globals.plugin = this;
     Globals.bukkitServer = this.getServer();
     Globals.logger = logger;
+    Globals.consoleCommandSender = Globals.bukkitServer.getConsoleSender();
 
     logger.info("JumpN is now enabled!");
   }
@@ -43,6 +47,7 @@ public class Main extends JavaPlugin
   public void registerCommands()
   {
     Objects.requireNonNull(this.getCommand("jumpn")).setExecutor(new CommandJumpN());
+    Objects.requireNonNull(this.getCommand("test")).setExecutor(new CommandTest());
   }
 
 }
