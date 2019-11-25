@@ -1,25 +1,60 @@
 package org.werti.jumpn;
 
+import jdk.internal.jline.internal.Nullable;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.util.Vector;
-import org.werti.jumpn.BlockHandling.VectorHelper;
 import org.werti.jumpn.BlockHandling.Platform;
+import org.werti.jumpn.BlockHandling.VectorHelper;
 
 public class JumpN
 {
-  private static Material blockType = Material.GLASS;
+  private static Material blockMaterial = Material.GLASS;
 
   private JumpNPlayer jumpNPlayer;
+
+  @Nullable
+  private Location oldBlockLocation;
+  @Nullable
+  private Material oldBlockMaterial;
+
+  @Nullable
+  private Location newBlockLocation;
+  @Nullable
+  private  Material newBlockMaterial;
 
   public JumpN(JumpNPlayer jumpNPlayer)
   {
     this.jumpNPlayer = jumpNPlayer;
   }
 
-  public boolean SetNextPlatform()
+  public void nextPlatform()
+  {
+    removeOldPlatform();
+
+    for(int i = 0; i < 500; i++)
+    {
+      if(setNewPlatform())
+      {
+        return;
+      }
+    }
+
+    Globals.logger.severe("Couldn't set platform after [500] tries! Aborting jumpn..");
+
+    JumpNPlayer.Remove(jumpNPlayer);
+  }
+
+  private void removeOldPlatform()
+  {
+    if(oldBlockLocation != null && oldBlockMaterial != null)
+    {
+      oldBlockLocation.getBlock().setType(oldBlockMaterial);
+    }
+  }
+
+  private boolean setNewPlatform()
   {
     Platform nextPlatform = Platform.GetRandomPlatform();
 
@@ -44,8 +79,24 @@ public class JumpN
       return false;
     }
 
-    newBlock.setType(blockType);
+    oldBlockLocation = newBlock.getLocation().clone();
+    oldBlockMaterial = newBlockMaterial;
+
+    this.newBlockLocation = newBlock.getLocation();
+    newBlockMaterial = newBlock.getType();
+
+    newBlock.setType(blockMaterial);
 
     return true;
+  }
+
+  public Location getOldBlockLocation()
+  {
+    return oldBlockLocation;
+  }
+
+  public Location getNewBlockLocation()
+  {
+    return newBlockLocation;
   }
 }

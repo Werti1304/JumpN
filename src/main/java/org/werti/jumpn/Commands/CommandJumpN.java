@@ -36,7 +36,7 @@ public class CommandJumpN implements CommandExecutor
 
     JumpN jumpN = new JumpN(jumpNPlayer);
 
-    if(!jumpN.SetNextPlatform())
+    if(!jumpN.setNewPlatform())
     {
       Globals.debug("Couldn't set new platform!");
     }

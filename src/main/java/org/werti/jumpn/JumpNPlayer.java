@@ -1,14 +1,11 @@
 package org.werti.jumpn;
 
-import com.google.gson.internal.$Gson$Preconditions;
 import jdk.internal.jline.internal.Nullable;
 import org.bukkit.ChatColor;
-import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
-import sun.tools.java.Environment;
 
 import java.util.ArrayList;
 import java.util.Optional;
@@ -23,6 +20,8 @@ public class JumpNPlayer
   public static ArrayList<JumpNPlayer> jumpNPlayerList = new ArrayList<>();
 
   private Player player;
+
+  private JumpN jumpN;
 
   /**
    * Own function for adding, because I think it's more fitting for a Class that adds itself
@@ -65,6 +64,8 @@ public class JumpNPlayer
   private JumpNPlayer(Player player)
   {
     this.player = player;
+
+    jumpN = new JumpN(this);
   }
 
   public Player getPlayer()

@@ -33,6 +33,9 @@ public class VectorHelper
     int forwardOffset = platform.platformConfiguration.forwardOffset;
     int sidewaysOffset = platform.platformConfiguration.sidewaysOffset;
 
+    // Sets the forward and sideways length to corresponding, relative coordinates
+    // (Basically changes forwardOffset and sidewaysOffset with information from the directions to x & z
+    // coordinates relative to the player)
     switch (platform.direction)
     {
       case North:
@@ -100,6 +103,7 @@ public class VectorHelper
     Vector start = new Vector();
     Vector end = new Vector();
 
+    // Replaces Math.Max and Math.Min with only 1 operation (not as pretty, but it runs faster)
     if(coords1.getBlockX() > coords2.getBlockX())
     {
       start.setX(coords2.getBlockX());
