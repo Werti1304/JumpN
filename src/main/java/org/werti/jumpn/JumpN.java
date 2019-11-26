@@ -8,6 +8,7 @@ import org.bukkit.util.Vector;
 import org.werti.jumpn.BlockHandling.Platform;
 import org.werti.jumpn.BlockHandling.VectorHelper;
 import org.werti.jumpn.Events.Jumpn.LoseEvent;
+import org.werti.jumpn.Events.Jumpn.ReachedPlatformEvent;
 import org.werti.jumpn.Events.Jumpn.StartEvent;
 import org.werti.jumpn.Events.Jumpn.WinEvent;
 
@@ -47,13 +48,21 @@ public class JumpN
     trySettingNewPlatform();
   }
 
+  /**
+   * Deletes old platform and generates new platform (hopefully enough) thread-safe
+   */
   public void nextPlatform()
   {
     platformLock.lock();
 
     Globals.debug("Setting next platform..");
 
+    // Next platform was reached, so we increment the score
     score++;
+
+    // Calls the ReachedPlatform-Event
+    ReachedPlatformEvent reachedPlatformEvent = new ReachedPlatformEvent(jumpNPlayer.getPlayer(), score);
+    Globals.bukkitServer.getPluginManager().callEvent(reachedPlatformEvent);
 
     if(score == Globals.winScore)
     {
@@ -67,6 +76,9 @@ public class JumpN
     trySettingNewPlatform();
   }
 
+  /**
+   * Removes old platform
+   */
   private void removeOldPlatform()
   {
     if(oldPlatformLocation != null && oldPlatformMaterial != null)
