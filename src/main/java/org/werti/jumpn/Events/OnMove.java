@@ -3,6 +3,7 @@ package org.werti.jumpn.Events;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.werti.jumpn.Globals;
@@ -11,7 +12,7 @@ import org.werti.jumpn.JumpNPlayer;
 
 public class OnMove implements Listener
 {
-  @EventHandler
+  @EventHandler (priority = EventPriority.LOW)
   public void onPlayerMoveEvent(PlayerMoveEvent playerMoveEvent)
   {
     JumpNPlayer jumpNPlayer = JumpNPlayer.GetJumpNPlayer(playerMoveEvent.getPlayer());

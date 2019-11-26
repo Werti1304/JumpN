@@ -7,6 +7,8 @@ import org.bukkit.block.Block;
 import org.bukkit.util.Vector;
 import org.werti.jumpn.BlockHandling.Platform;
 import org.werti.jumpn.BlockHandling.VectorHelper;
+import org.werti.jumpn.Events.Jumpn.LoseEvent;
+import org.werti.jumpn.Events.Jumpn.StartEvent;
 
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -31,6 +33,10 @@ public class JumpN
   public JumpN(JumpNPlayer jumpNPlayer)
   {
     this.jumpNPlayer = jumpNPlayer;
+
+    // Calls the Start-Event
+    StartEvent startEvent = new StartEvent(jumpNPlayer.getPlayer());
+    Globals.bukkitServer.getPluginManager().callEvent(startEvent);
 
     nextPlatform();
   }
@@ -104,7 +110,17 @@ public class JumpN
     return true;
   }
 
-  public void destroyBlocks()
+  public void end()
+  {
+    resetBlocks();
+
+    // Calls the Lose-Event
+    // TODO: Implement score here
+    LoseEvent loseEvent = new LoseEvent(jumpNPlayer.getPlayer(), 0);
+    Globals.bukkitServer.getPluginManager().callEvent(loseEvent);
+  }
+
+  private void resetBlocks()
   {
     if(oldPlatformLocation != null)
     {

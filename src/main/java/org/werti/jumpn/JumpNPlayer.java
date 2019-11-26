@@ -15,14 +15,18 @@ import java.util.Optional;
  *
  * Adding and getting could've been done dynamically, but it's not needed for our purposes
  */
-public class JumpNPlayer {
+public class JumpNPlayer
+{
   public static ArrayList<JumpNPlayer> jumpNPlayerList = new ArrayList<>();
 
   private Player player;
 
   private JumpN jumpN;
 
-  public enum MessageType {
+  private int score = 0;
+
+  public enum MessageType
+  {
     Info(ChatColor.GRAY),
     Positive(ChatColor.GREEN),
     Warning(ChatColor.RED),
@@ -61,7 +65,7 @@ public class JumpNPlayer {
   {
     Globals.debug("Terminating jumpnrun of " + getPlayer().getName());
 
-    jumpN.destroyBlocks();
+    jumpN.end();
     jumpNPlayerList.remove(this);
   }
 
@@ -117,9 +121,13 @@ public class JumpNPlayer {
 
   public void sendMessage(MessageType messageType, String message)
   {
+    sendMessage(player, messageType, message);
+  }
+
+  public static void sendMessage(Player player, MessageType messageType, String message)
+  {
     String formattedMessage = String.format("%s %s%s", Globals.ChatPrefix, messageType.getColor(), message);
 
     player.sendMessage(formattedMessage);
   }
-
 }

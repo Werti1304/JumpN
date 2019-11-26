@@ -65,8 +65,8 @@ public class Platform
     JS1(1,0,1,1),
     JS2(2,0,1,15),
     JS3(3,0,1,50),
-    JS4(4,0,1,80),
-    JS5(5,0,1,30),
+    JS4(4,0,1,70),
+    JS5(5,0,1,20),
     ;
 
     int forwardOffset;
