@@ -9,16 +9,19 @@ import org.werti.jumpn.BlockHandling.Platform;
 import org.werti.jumpn.BlockHandling.VectorHelper;
 import org.werti.jumpn.Events.Jumpn.LoseEvent;
 import org.werti.jumpn.Events.Jumpn.StartEvent;
+import org.werti.jumpn.Events.Jumpn.WinEvent;
 
 import java.util.concurrent.locks.ReentrantLock;
 
 public class JumpN
 {
-  private ReentrantLock platformLock = new ReentrantLock();
+  private ReentrantLock platformLock;
 
   private static Material blockMaterial = Material.SNOW_BLOCK;
 
   private JumpNPlayer jumpNPlayer;
+
+  private int score = 0;
 
   @Nullable
   private Location oldPlatformLocation;
@@ -28,17 +31,20 @@ public class JumpN
   @Nullable
   private Location newPlatformLocation;
   @Nullable
-  private  Material newPlatformMaterial;
+  private Material newPlatformMaterial;
 
   public JumpN(JumpNPlayer jumpNPlayer)
   {
     this.jumpNPlayer = jumpNPlayer;
 
+    platformLock = new ReentrantLock();
+
     // Calls the Start-Event
     StartEvent startEvent = new StartEvent(jumpNPlayer.getPlayer());
     Globals.bukkitServer.getPluginManager().callEvent(startEvent);
 
-    nextPlatform();
+    platformLock.lock();
+    trySettingNewPlatform();
   }
 
   public void nextPlatform()
@@ -47,9 +53,31 @@ public class JumpN
 
     Globals.debug("Setting next platform..");
 
+    score++;
+
+    if(score == Globals.winScore)
+    {
+      // Calls the Win-Event
+      WinEvent winEvent = new WinEvent(jumpNPlayer.getPlayer());
+      Globals.bukkitServer.getPluginManager().callEvent(winEvent);
+    }
+
     removeOldPlatform();
 
-    for(int i = 0; i < 500; i++)
+    trySettingNewPlatform();
+  }
+
+  private void removeOldPlatform()
+  {
+    if(oldPlatformLocation != null && oldPlatformMaterial != null)
+    {
+      oldPlatformLocation.getBlock().setType(oldPlatformMaterial);
+    }
+  }
+
+  private void trySettingNewPlatform()
+  {
+    for (int i = 0; i < 500; i++)
     {
       if(setNewPlatform())
       {
@@ -61,14 +89,6 @@ public class JumpN
     Globals.logger.severe("Couldn't set platform after [500] tries! Aborting jumpn..");
 
     jumpNPlayer.terminate();
-  }
-
-  private void removeOldPlatform()
-  {
-    if(oldPlatformLocation != null && oldPlatformMaterial != null)
-    {
-      oldPlatformLocation.getBlock().setType(oldPlatformMaterial);
-    }
   }
 
   private boolean setNewPlatform()
@@ -115,8 +135,7 @@ public class JumpN
     resetBlocks();
 
     // Calls the Lose-Event
-    // TODO: Implement score here
-    LoseEvent loseEvent = new LoseEvent(jumpNPlayer.getPlayer(), 0);
+    LoseEvent loseEvent = new LoseEvent(jumpNPlayer.getPlayer(), score);
     Globals.bukkitServer.getPluginManager().callEvent(loseEvent);
   }
 

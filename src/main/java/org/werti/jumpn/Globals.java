@@ -26,6 +26,8 @@ public class Globals
   // Overwrites log-finer
   public static boolean DEBUG = true;
 
+  public static final int winScore = 10;
+
   public static void debug(String message)
   {
     if(DEBUG)
