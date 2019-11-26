@@ -2,6 +2,7 @@ package org.werti.jumpn;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.werti.jumpn.Commands.CommandJumpN;
 import org.werti.jumpn.Commands.CommandTest;
+import org.werti.jumpn.Events.Jumpn.JumpnEventListener;
 import org.werti.jumpn.Events.OnMove;
 
 import java.util.Objects;
@@ -46,12 +47,13 @@ public class Main extends JavaPlugin
     Globals.logger.info("JumpN is now disabled!");
   }
 
-  public void registerEvents()
+  private void registerEvents()
   {
     Globals.bukkitServer.getPluginManager().registerEvents(new OnMove(), this);
+    Globals.bukkitServer.getPluginManager().registerEvents(new JumpnEventListener(), this);
   }
 
-  public void registerCommands()
+  private void registerCommands()
   {
     Objects.requireNonNull(this.getCommand("jumpn")).setExecutor(new CommandJumpN());
     Objects.requireNonNull(this.getCommand("test")).setExecutor(new CommandTest());

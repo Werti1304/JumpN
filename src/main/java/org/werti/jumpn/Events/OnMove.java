@@ -48,7 +48,7 @@ public class OnMove implements Listener
       if(playerLocation.getBlockY() < newPlatformLocation.getBlockY() - 1)
       {
         Globals.debug("Terminating, because player is significantly lower then new platform");
-        jumpNPlayer.terminate();
+        jumpNPlayer.lost();
       }
     }
     else
@@ -57,7 +57,7 @@ public class OnMove implements Listener
       if (playerLocation.getBlockY() < oldPlatformLocation.getBlockY())
       {
         Globals.debug("Terminating, because player is lower then old platform");
-        jumpNPlayer.terminate();
+        jumpNPlayer.lost();
       }
     }
   }

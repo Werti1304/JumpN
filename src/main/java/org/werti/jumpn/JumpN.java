@@ -3,12 +3,15 @@ package org.werti.jumpn;
 import jdk.internal.jline.internal.Nullable;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
+import org.werti.jumpn.BlockHandling.BlockHelper;
 import org.werti.jumpn.BlockHandling.Platform;
 import org.werti.jumpn.BlockHandling.VectorHelper;
 import org.werti.jumpn.Events.Jumpn.LoseEvent;
-import org.werti.jumpn.Events.Jumpn.ReachedPlatformEvent;
+import org.werti.jumpn.Events.Jumpn.PlatformReachedEvent;
 import org.werti.jumpn.Events.Jumpn.StartEvent;
 import org.werti.jumpn.Events.Jumpn.WinEvent;
 
@@ -17,8 +20,6 @@ import java.util.concurrent.locks.ReentrantLock;
 public class JumpN
 {
   private ReentrantLock platformLock;
-
-  private static Material blockMaterial = Material.SNOW_BLOCK;
 
   private JumpNPlayer jumpNPlayer;
 
@@ -39,7 +40,10 @@ public class JumpN
     this.jumpNPlayer = jumpNPlayer;
 
     platformLock = new ReentrantLock();
+  }
 
+  public void start()
+  {
     // Calls the Start-Event
     StartEvent startEvent = new StartEvent(jumpNPlayer.getPlayer());
     Globals.bukkitServer.getPluginManager().callEvent(startEvent);
@@ -61,14 +65,20 @@ public class JumpN
     score++;
 
     // Calls the ReachedPlatform-Event
-    ReachedPlatformEvent reachedPlatformEvent = new ReachedPlatformEvent(jumpNPlayer.getPlayer(), score);
+    PlatformReachedEvent reachedPlatformEvent = new PlatformReachedEvent(jumpNPlayer.getPlayer(), score);
     Globals.bukkitServer.getPluginManager().callEvent(reachedPlatformEvent);
+
+    Player player = jumpNPlayer.getPlayer();
 
     if(score == Globals.winScore)
     {
-      // Calls the Win-Event
-      WinEvent winEvent = new WinEvent(jumpNPlayer.getPlayer());
-      Globals.bukkitServer.getPluginManager().callEvent(winEvent);
+      player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1.f);
+      jumpNPlayer.won();
+      return;
+    }
+    else
+    {
+      player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.f);
     }
 
     removeOldPlatform();
@@ -89,7 +99,8 @@ public class JumpN
 
   private void trySettingNewPlatform()
   {
-    for (int i = 0; i < 500; i++)
+    // Firstly, try to generate a right platform by trying 50 random platform configurations
+    for (int i = 0; i < Globals.maxRandomPlatformTries; i++)
     {
       if(setNewPlatform())
       {
@@ -98,16 +109,47 @@ public class JumpN
       }
     }
 
-    Globals.logger.severe("Couldn't set platform after [500] tries! Aborting jumpn..");
+    Globals.logger.warning(String.format("Generated 10 random platforms for %s, but none of them fit.", jumpNPlayer.getName()));
 
-    jumpNPlayer.terminate();
+    for(Platform.PlatformConfiguration platformConfiguration : Platform.PlatformConfiguration.values())
+    {
+      for(Platform.Direction direction : Platform.Direction.values())
+      {
+        Platform platform;
+
+        platform = new Platform(platformConfiguration, direction, Platform.SidewaysDirection.Left);
+        if(setNewPlatform(platform))
+        {
+          platformLock.unlock();
+          return;
+        }
+
+        platform = new Platform(platformConfiguration, direction, Platform.SidewaysDirection.Right);
+        if(setNewPlatform(platform))
+        {
+          platformLock.unlock();
+          return;
+        }
+      }
+    }
+
+    Globals.logger.severe("No space for a platform found for " + jumpNPlayer.getName());
+
+    jumpNPlayer.lost();
   }
 
+  /**
+   * Generates a new random platform.
+   * @return whether the platform has been placed.
+   */
   private boolean setNewPlatform()
   {
-    Platform nextPlatform = Platform.GetRandomPlatform();
+    return setNewPlatform(Platform.GetRandomPlatform());
+  }
 
-    Vector platformCoords = VectorHelper.AdjustJump(jumpNPlayer, nextPlatform);
+  private boolean setNewPlatform(Platform platform)
+  {
+    Vector platformCoords = VectorHelper.AdjustJump(jumpNPlayer, platform);
 
     Vector playerCoords = jumpNPlayer.toVector();
 
@@ -129,7 +171,7 @@ public class JumpN
 
     Block newBlock = platformCoords.toLocation(jumpNPlayer.getWorld()).getBlock();
 
-    if(newBlock.getType() != Material.AIR)
+    if(!BlockHelper.isAir(newBlock.getType()))
     {
       return false;
     }
@@ -137,12 +179,12 @@ public class JumpN
     newPlatformLocation = newBlock.getLocation();
     newPlatformMaterial = newBlock.getType();
 
-    newBlock.setType(blockMaterial);
+    newBlock.setType(Globals.platformMaterial);
 
     return true;
   }
 
-  public void end()
+  public void lost()
   {
     resetBlocks();
 
@@ -151,12 +193,20 @@ public class JumpN
     Globals.bukkitServer.getPluginManager().callEvent(loseEvent);
   }
 
+  public void won()
+  {
+    removeOldPlatform();
+
+    newPlatformLocation.getBlock().setType(Globals.winningPlatformMaterial);
+
+    // Calls the Win-Event
+    WinEvent winEvent = new WinEvent(jumpNPlayer.getPlayer());
+    Globals.bukkitServer.getPluginManager().callEvent(winEvent);
+  }
+
   private void resetBlocks()
   {
-    if(oldPlatformLocation != null)
-    {
-      oldPlatformLocation.getBlock().setType(oldPlatformMaterial);
-    }
+    removeOldPlatform();
 
     if(newPlatformLocation != null)
     {

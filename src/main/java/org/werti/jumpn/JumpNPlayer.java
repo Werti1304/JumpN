@@ -29,7 +29,7 @@ public class JumpNPlayer
   {
     Info(ChatColor.GRAY),
     Positive(ChatColor.GREEN),
-    Warning(ChatColor.RED),
+    Negative(ChatColor.RED),
     Error(ChatColor.DARK_RED);
 
     private ChatColor color;
@@ -61,11 +61,29 @@ public class JumpNPlayer
     return newPlayer;
   }
 
-  public void terminate()
+  public void lost()
   {
-    Globals.debug("Terminating jumpnrun of " + getPlayer().getName());
+    jumpN.lost();
 
-    jumpN.end();
+    remove();
+  }
+
+  public void won()
+  {
+    jumpN.won();
+
+    remove();
+  }
+
+  public void start()
+  {
+    jumpN.start();
+  }
+
+  private void remove()
+  {
+    Globals.debug(String.format("Removing player %s", getPlayer().getName()));
+
     jumpNPlayerList.remove(this);
   }
 
@@ -87,10 +105,6 @@ public class JumpNPlayer
   private JumpNPlayer(Player player)
   {
     this.player = player;
-  }
-
-  public void start()
-  {
     jumpN = new JumpN(this);
   }
 
@@ -112,6 +126,11 @@ public class JumpNPlayer
   public Vector toVector()
   {
     return player.getLocation().toVector();
+  }
+
+  public String getName()
+  {
+    return player.getName();
   }
 
   public JumpN getJumpN()

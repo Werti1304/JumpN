@@ -1,7 +1,6 @@
 package org.werti.jumpn.BlockHandling;
 
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.util.Vector;
 import org.werti.jumpn.JumpNPlayer;
@@ -149,7 +148,7 @@ public class VectorHelper
           location.setY(y);
           location.setZ(z);
 
-          if(location.getBlock().getType() != Material.AIR)
+          if(!BlockHelper.isAir(location.getBlock().getType()))
           {
             return false;
           }
@@ -160,4 +159,5 @@ public class VectorHelper
     }
     return true;
   }
+
 }

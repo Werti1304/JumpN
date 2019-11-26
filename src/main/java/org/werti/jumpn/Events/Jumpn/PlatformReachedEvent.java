@@ -8,14 +8,14 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Event that gets called when someone looses the jump'n'run.
  */
-public class ReachedPlatformEvent extends Event
+public class PlatformReachedEvent extends Event
 {
   private static final HandlerList HANDLERS = new HandlerList();
 
   private final Player player;
   private final int score;
 
-  public ReachedPlatformEvent(Player player, int score)
+  public PlatformReachedEvent(Player player, int score)
   {
     this.player = player;
     this.score = score;
