@@ -5,8 +5,6 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import org.werti.jumpn.Globals;
-import org.werti.jumpn.JumpN;
 import org.werti.jumpn.JumpNPlayer;
 
 public class CommandJumpN implements CommandExecutor
@@ -32,14 +30,8 @@ public class CommandJumpN implements CommandExecutor
       return true;
     }
 
-    jumpNPlayer = JumpNPlayer.Add(player);
-
-    JumpN jumpN = new JumpN(jumpNPlayer);
-
-    if(!jumpN.setNewPlatform())
-    {
-      Globals.debug("Couldn't set new platform!");
-    }
+    JumpNPlayer newJumpNPlayer = JumpNPlayer.Add(player);
+    newJumpNPlayer.start();
 
     return true;
   }

@@ -2,6 +2,7 @@ package org.werti.jumpn;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.werti.jumpn.Commands.CommandJumpN;
 import org.werti.jumpn.Commands.CommandTest;
+import org.werti.jumpn.Events.OnMove;
 
 import java.util.Objects;
 import java.util.logging.Logger;
@@ -22,16 +23,17 @@ public class Main extends JavaPlugin
   {
     Logger logger = getLogger();
 
-    logger.info("Enabling JumpN...");
-
-    logger.info("Registering commands..");
-    registerCommands();
-
-    logger.info("Setting Globals..");
+    logger.info("Setting Globals");
     Globals.plugin = this;
     Globals.bukkitServer = this.getServer();
     Globals.logger = logger;
     Globals.consoleCommandSender = Globals.bukkitServer.getConsoleSender();
+
+    logger.info("Registering events");
+    registerEvents();
+
+    logger.info("Registering commands");
+    registerCommands();
 
     logger.info("JumpN is now enabled!");
   }
@@ -42,6 +44,11 @@ public class Main extends JavaPlugin
     Globals.logger.info("Disabling JumpN..");
 
     Globals.logger.info("JumpN is now disabled!");
+  }
+
+  public void registerEvents()
+  {
+    Globals.bukkitServer.getPluginManager().registerEvents(new OnMove(), this);
   }
 
   public void registerCommands()

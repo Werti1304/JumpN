@@ -8,49 +8,60 @@ import org.bukkit.util.Vector;
 import org.werti.jumpn.BlockHandling.Platform;
 import org.werti.jumpn.BlockHandling.VectorHelper;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 public class JumpN
 {
-  private static Material blockMaterial = Material.GLASS;
+  private ReentrantLock platformLock = new ReentrantLock();
+
+  private static Material blockMaterial = Material.SNOW_BLOCK;
 
   private JumpNPlayer jumpNPlayer;
 
   @Nullable
-  private Location oldBlockLocation;
+  private Location oldPlatformLocation;
   @Nullable
-  private Material oldBlockMaterial;
+  private Material oldPlatformMaterial;
 
   @Nullable
-  private Location newBlockLocation;
+  private Location newPlatformLocation;
   @Nullable
-  private  Material newBlockMaterial;
+  private  Material newPlatformMaterial;
 
   public JumpN(JumpNPlayer jumpNPlayer)
   {
     this.jumpNPlayer = jumpNPlayer;
+
+    nextPlatform();
   }
 
   public void nextPlatform()
   {
+    platformLock.lock();
+
+    Globals.debug("Setting next platform..");
+
     removeOldPlatform();
 
     for(int i = 0; i < 500; i++)
     {
       if(setNewPlatform())
       {
+        platformLock.unlock();
         return;
       }
     }
 
     Globals.logger.severe("Couldn't set platform after [500] tries! Aborting jumpn..");
 
-    JumpNPlayer.Remove(jumpNPlayer);
+    jumpNPlayer.terminate();
   }
 
   private void removeOldPlatform()
   {
-    if(oldBlockLocation != null && oldBlockMaterial != null)
+    if(oldPlatformLocation != null && oldPlatformMaterial != null)
     {
-      oldBlockLocation.getBlock().setType(oldBlockMaterial);
+      oldPlatformLocation.getBlock().setType(oldPlatformMaterial);
     }
   }
 
@@ -72,6 +83,12 @@ public class JumpN
       return false;
     }
 
+    if(newPlatformLocation != null)
+    {
+      oldPlatformLocation = newPlatformLocation.clone();
+      oldPlatformMaterial = newPlatformMaterial;
+    }
+
     Block newBlock = platformCoords.toLocation(jumpNPlayer.getWorld()).getBlock();
 
     if(newBlock.getType() != Material.AIR)
@@ -79,24 +96,39 @@ public class JumpN
       return false;
     }
 
-    oldBlockLocation = newBlock.getLocation().clone();
-    oldBlockMaterial = newBlockMaterial;
-
-    this.newBlockLocation = newBlock.getLocation();
-    newBlockMaterial = newBlock.getType();
+    newPlatformLocation = newBlock.getLocation();
+    newPlatformMaterial = newBlock.getType();
 
     newBlock.setType(blockMaterial);
 
     return true;
   }
 
-  public Location getOldBlockLocation()
+  public void destroyBlocks()
   {
-    return oldBlockLocation;
+    if(oldPlatformLocation != null)
+    {
+      oldPlatformLocation.getBlock().setType(oldPlatformMaterial);
+    }
+
+    if(newPlatformLocation != null)
+    {
+      newPlatformLocation.getBlock().setType(newPlatformMaterial);
+    }
   }
 
-  public Location getNewBlockLocation()
+  public Location getOldPlatformLocation()
   {
-    return newBlockLocation;
+    return oldPlatformLocation;
+  }
+
+  public Location getNewPlatformLocation()
+  {
+    return newPlatformLocation;
+  }
+
+  public ReentrantLock getPlatformLock()
+  {
+    return platformLock;
   }
 }

@@ -154,7 +154,7 @@ public class VectorHelper
             return false;
           }
 
-          location.getBlock().setType(Material.GOLD_BLOCK);
+          //location.getBlock().setType(Material.GOLD_BLOCK);
         }
       }
     }

@@ -50,13 +50,23 @@ public class Platform
 
   public enum PlatformConfiguration
   {
-    // TODO: More platforms
-    J1(2,0,0,5),
-    J2(3,0,0,10),
-    J3(4,0,0,2),
-    J4(2,1,0,3),
-    J5(3,1,0,8),
-    J6(4,1,0,5)
+    // J.. Forward Jump
+    // S.. Sideways jump
+    // H.. Jump with height-difference
+    J1(1,0,0,1),
+    J2(2,0,0,5),
+    J3(3,0,0,70),
+    J4(4,0,0,80),
+    J5(5,0,0,30),
+    JH1(1,1,0,1),
+    JH2(2,1,0,15),
+    JH3(3,1,0,70),
+    JH4(4,1,0,40),
+    JS1(1,0,1,1),
+    JS2(2,0,1,15),
+    JS3(3,0,1,50),
+    JS4(4,0,1,80),
+    JS5(5,0,1,30),
     ;
 
     int forwardOffset;
@@ -71,7 +81,7 @@ public class Platform
      * @param forwardOffset
      * @param heightOffset
      * @param sidewaysOffset
-     * @param probability Probability-Coefficient from 1-10 of the platform to spawn (1min, 10max)
+     * @param probability Probability-Coefficient from 1-100 of the platform to spawn (1min, 10max)
      */
     PlatformConfiguration(int forwardOffset, int heightOffset, int sidewaysOffset, int probability)
     {

@@ -15,17 +15,36 @@ import java.util.Optional;
  *
  * Adding and getting could've been done dynamically, but it's not needed for our purposes
  */
-public class JumpNPlayer
-{
+public class JumpNPlayer {
   public static ArrayList<JumpNPlayer> jumpNPlayerList = new ArrayList<>();
 
   private Player player;
 
   private JumpN jumpN;
 
+  public enum MessageType {
+    Info(ChatColor.GRAY),
+    Positive(ChatColor.GREEN),
+    Warning(ChatColor.RED),
+    Error(ChatColor.DARK_RED);
+
+    private ChatColor color;
+
+    MessageType(ChatColor color)
+    {
+      this.color = color;
+    }
+
+    public ChatColor getColor()
+    {
+      return color;
+    }
+  }
+
   /**
    * Own function for adding, because I think it's more fitting for a Class that adds itself
    * to a static list.
+   *
    * @param player Player to add as JumpPlayer
    * @return Newly created JumpPlayer
    */
@@ -38,12 +57,12 @@ public class JumpNPlayer
     return newPlayer;
   }
 
-  /**
-   * @param jumpNPlayer JumpPlayer to be removed as a JumpNPlayer
-   */
-  public static void Remove(JumpNPlayer jumpNPlayer)
+  public void terminate()
   {
-    jumpNPlayerList.remove(jumpNPlayer);
+    Globals.debug("Terminating jumpnrun of " + getPlayer().getName());
+
+    jumpN.destroyBlocks();
+    jumpNPlayerList.remove(this);
   }
 
   /**
@@ -64,7 +83,10 @@ public class JumpNPlayer
   private JumpNPlayer(Player player)
   {
     this.player = player;
+  }
 
+  public void start()
+  {
     jumpN = new JumpN(this);
   }
 
@@ -88,24 +110,9 @@ public class JumpNPlayer
     return player.getLocation().toVector();
   }
 
-  public enum MessageType
+  public JumpN getJumpN()
   {
-    Info(ChatColor.GRAY),
-    Positive(ChatColor.GREEN),
-    Warning(ChatColor.RED),
-    Error(ChatColor.DARK_RED);
-
-    private ChatColor color;
-
-    MessageType(ChatColor color)
-    {
-      this.color = color;
-    }
-
-    public ChatColor getColor()
-    {
-      return color;
-    }
+    return jumpN;
   }
 
   public void sendMessage(MessageType messageType, String message)
