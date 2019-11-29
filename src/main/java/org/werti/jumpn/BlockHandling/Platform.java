@@ -35,7 +35,7 @@ public class Platform
       sidewaysDirection = SidewaysDirection.GetRandom();
     }
 
-    Globals.debug(String.format("Platform generated at Offsets:\nForward:%d\nSideways:%d\nHeight:%d\nDirection:%s\nSideways Direction:%s",
+    Globals.debug(String.format("Platform generated at Offsets: F:%d S:%d H:%d D:%s SD:%s",
                                 platformConfiguration.forwardOffset,
                                 platformConfiguration.sidewaysOffset,
                                 platformConfiguration.heightOffset,

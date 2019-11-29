@@ -42,7 +42,10 @@ public class Main extends JavaPlugin
   @Override
   public void onDisable()
   {
-    Globals.logger.info("Disabling JumpN..");
+    Globals.logger.info("Disabling JumpN");
+
+    Globals.logger.info("Resetting all changed blocks");
+    resetAllBlocks();
 
     Globals.logger.info("JumpN is now disabled!");
   }
@@ -57,6 +60,14 @@ public class Main extends JavaPlugin
   {
     Objects.requireNonNull(this.getCommand("jumpn")).setExecutor(new CommandJumpN());
     Objects.requireNonNull(this.getCommand("test")).setExecutor(new CommandTest());
+  }
+
+  private void resetAllBlocks()
+  {
+    for(JumpN jumpN : JumpN.getJumpNList())
+    {
+      jumpN.resetBlocks();
+    }
   }
 
 }

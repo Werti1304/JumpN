@@ -17,13 +17,8 @@ import java.util.Optional;
  */
 public class JumpNPlayer
 {
-  public static ArrayList<JumpNPlayer> jumpNPlayerList = new ArrayList<>();
 
   private Player player;
-
-  private JumpN jumpN;
-
-  private int score = 0;
 
   public enum MessageType
   {
@@ -45,67 +40,9 @@ public class JumpNPlayer
     }
   }
 
-  /**
-   * Own function for adding, because I think it's more fitting for a Class that adds itself
-   * to a static list.
-   *
-   * @param player Player to add as JumpPlayer
-   * @return Newly created JumpPlayer
-   */
-  public static JumpNPlayer Add(Player player)
-  {
-    JumpNPlayer newPlayer = new JumpNPlayer(player);
-
-    jumpNPlayerList.add(newPlayer);
-
-    return newPlayer;
-  }
-
-  public void lost()
-  {
-    jumpN.lost();
-
-    remove();
-  }
-
-  public void won()
-  {
-    jumpN.won();
-
-    remove();
-  }
-
-  public void start()
-  {
-    jumpN.start();
-  }
-
-  private void remove()
-  {
-    Globals.debug(String.format("Removing player %s", getPlayer().getName()));
-
-    jumpNPlayerList.remove(this);
-  }
-
-  /**
-   * @param player Player to search for
-   * @return First player it can find
-   */
-  @Nullable
-  public static JumpNPlayer GetJumpNPlayer(Player player)
-  {
-    final Optional<JumpNPlayer> result = jumpNPlayerList.stream()
-        .filter(item -> item.player.equals(player))
-        .findAny();
-
-    // For readability and intellijs conscience
-    return result.orElse(null);
-  }
-
-  private JumpNPlayer(Player player)
+  JumpNPlayer(Player player)
   {
     this.player = player;
-    jumpN = new JumpN(this);
   }
 
   public Player getPlayer()
@@ -131,11 +68,6 @@ public class JumpNPlayer
   public String getName()
   {
     return player.getName();
-  }
-
-  public JumpN getJumpN()
-  {
-    return jumpN;
   }
 
   public void sendMessage(MessageType messageType, String message)

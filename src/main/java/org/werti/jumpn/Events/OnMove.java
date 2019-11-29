@@ -15,30 +15,32 @@ public class OnMove implements Listener
   @EventHandler (priority = EventPriority.LOW)
   public void onPlayerMoveEvent(PlayerMoveEvent playerMoveEvent)
   {
-    JumpNPlayer jumpNPlayer = JumpNPlayer.GetJumpNPlayer(playerMoveEvent.getPlayer());
+    JumpN jumpN = JumpN.getFrom(playerMoveEvent.getPlayer());
 
-    if (jumpNPlayer == null)
+    if (jumpN == null)
     {
       return;
     }
 
-    JumpN jumpn = jumpNPlayer.getJumpN();
-
-    if(jumpn.getPlatformLock().isLocked())
+    if(jumpN.getPlatformLock().isLocked())
     {
       return;
     }
 
-    Location playerLocation = jumpNPlayer.getLocation();
+    Location playerLocation = jumpN.jumpNPlayer.getLocation();
     Block playerStandBlock = playerLocation.clone().subtract(0, 1, 0).getBlock();
 
-    Location newPlatformLocation = jumpn.getNewPlatformLocation();
+    Location newPlatformLocation = jumpN.getNewPlatformLocation();
     Block newPlatformBlock = newPlatformLocation.getBlock();
-    Location oldPlatformLocation = jumpn.getOldPlatformLocation();
+    Location oldPlatformLocation = jumpN.getOldPlatformLocation();
 
-    if (playerStandBlock.equals(newPlatformBlock))
+    JumpN.State state = jumpN.getState();
+
+    if (playerStandBlock.equals(newPlatformBlock) && state == JumpN.State.Running)
     {
-      jumpn.nextPlatform();
+      jumpN.getPlatformLock().lock();
+      jumpN.nextPlatform();
+      jumpN.getPlatformLock().unlock();
       return;
     }
 
@@ -47,8 +49,15 @@ public class OnMove implements Listener
       // This terminates only if the player is 2 blocks lower than the platform hes supposed to be jumping on
       if(playerLocation.getBlockY() < newPlatformLocation.getBlockY() - 1)
       {
-        Globals.debug("Terminating, because player is significantly lower then new platform");
-        jumpNPlayer.lost();
+        if(state == JumpN.State.Running)
+        {
+          Globals.debug(jumpN.jumpNPlayer.getName(), "Terminating, because player is significantly lower then new platform");
+          jumpN.setState(JumpN.State.Lose);
+        }
+        else if(state == JumpN.State.Win)
+        {
+          jumpN.setState(JumpN.State.Terminate);
+        }
       }
     }
     else
@@ -56,8 +65,8 @@ public class OnMove implements Listener
       // This terminates if the player is lower than the platform he was standing on
       if (playerLocation.getBlockY() < oldPlatformLocation.getBlockY())
       {
-        Globals.debug("Terminating, because player is lower then old platform");
-        jumpNPlayer.lost();
+        Globals.debug(jumpN.jumpNPlayer.getName(), "Terminating, because player is lower then old platform");
+        jumpN.setState(JumpN.State.Lose);
       }
     }
   }

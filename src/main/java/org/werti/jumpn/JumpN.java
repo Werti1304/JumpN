@@ -15,15 +15,35 @@ import org.werti.jumpn.Events.Jumpn.PlatformReachedEvent;
 import org.werti.jumpn.Events.Jumpn.StartEvent;
 import org.werti.jumpn.Events.Jumpn.WinEvent;
 
+import java.util.ArrayList;
+import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class JumpN
 {
+  private static ArrayList<JumpN> jumpNList = new ArrayList<>();
+
   private ReentrantLock platformLock;
 
-  private JumpNPlayer jumpNPlayer;
+  public JumpNPlayer jumpNPlayer;
 
   private int score = 0;
+
+  public State getState()
+  {
+    return state;
+  }
+
+  public enum State
+  {
+    Idle,
+    Running,
+    Win,
+    Lose,
+    Terminate
+  };
+
+  private State state = State.Idle;
 
   @Nullable
   private Location oldPlatformLocation;
@@ -35,32 +55,86 @@ public class JumpN
   @Nullable
   private Material newPlatformMaterial;
 
-  public JumpN(JumpNPlayer jumpNPlayer)
+  public JumpN(Player player)
   {
-    this.jumpNPlayer = jumpNPlayer;
+    this.jumpNPlayer = new JumpNPlayer(player);
+
+    jumpNList.add(this);
 
     platformLock = new ReentrantLock();
   }
 
-  public void start()
+  public void tearDown()
   {
-    // Calls the Start-Event
-    StartEvent startEvent = new StartEvent(jumpNPlayer.getPlayer());
-    Globals.bukkitServer.getPluginManager().callEvent(startEvent);
+    jumpNList.remove(this);
 
-    platformLock.lock();
-    trySettingNewPlatform();
+    if(state == State.Running)
+    {
+      setState(State.Terminate);
+    }
+  }
+
+  @Nullable
+  public static JumpN getFrom(Player player)
+  {
+    final Optional<JumpN> result = jumpNList.stream()
+        .filter(item -> item.jumpNPlayer.getPlayer().equals(player))
+        .findAny();
+
+    // For readability and intellijs conscience
+    return result.orElse(null);
+  }
+
+  public void setState(State state)
+  {
+    debug(String.format("Setting JumpN-State from %s to %s", this.state.name(), state.name()));
+
+    this.state = state;
+
+    switch (state)
+    {
+      case Idle:
+        break;
+      case Running:
+        // Calls the Start-Event
+        StartEvent startEvent = new StartEvent(jumpNPlayer.getPlayer());
+        Globals.bukkitServer.getPluginManager().callEvent(startEvent);
+
+        platformLock.lock();
+        trySettingNewPlatform();
+        platformLock.unlock();
+        break;
+      case Win:
+        resetOldPlatform();
+
+        setBlock(newPlatformLocation, Globals.winningPlatformMaterial);
+
+        // Calls the Win-Event
+        WinEvent winEvent = new WinEvent(jumpNPlayer.getPlayer());
+        Globals.bukkitServer.getPluginManager().callEvent(winEvent);
+        break;
+      case Lose:
+        resetBlocks();
+
+        // Calls the Lose-Event
+        LoseEvent loseEvent = new LoseEvent(jumpNPlayer.getPlayer(), score);
+        Globals.bukkitServer.getPluginManager().callEvent(loseEvent);
+
+        tearDown();
+        break;
+      case Terminate:
+        resetBlocks();
+
+        tearDown();
+        break;
+    }
   }
 
   /**
-   * Deletes old platform and generates new platform (hopefully enough) thread-safe
+   * Deletes old platform and generates new platform
    */
   public void nextPlatform()
   {
-    platformLock.lock();
-
-    Globals.debug("Setting next platform..");
-
     // Next platform was reached, so we increment the score
     score++;
 
@@ -73,7 +147,7 @@ public class JumpN
     if(score == Globals.winScore)
     {
       player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1.f);
-      jumpNPlayer.won();
+      setState(State.Win);
       return;
     }
     else
@@ -81,7 +155,7 @@ public class JumpN
       player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.f);
     }
 
-    removeOldPlatform();
+    resetOldPlatform();
 
     trySettingNewPlatform();
   }
@@ -89,12 +163,15 @@ public class JumpN
   /**
    * Removes old platform
    */
-  private void removeOldPlatform()
+  private void resetOldPlatform()
   {
     if(oldPlatformLocation != null && oldPlatformMaterial != null)
     {
-      oldPlatformLocation.getBlock().setType(oldPlatformMaterial);
+      setBlock(oldPlatformLocation, oldPlatformMaterial);
     }
+
+    oldPlatformLocation = null;
+    oldPlatformMaterial = null;
   }
 
   private void trySettingNewPlatform()
@@ -104,12 +181,11 @@ public class JumpN
     {
       if(setNewPlatform())
       {
-        platformLock.unlock();
         return;
       }
     }
 
-    Globals.logger.warning(String.format("Generated 10 random platforms for %s, but none of them fit.", jumpNPlayer.getName()));
+    debug(String.format("Generated %d random platforms for %s, but none of them fit.", Globals.maxRandomPlatformTries, jumpNPlayer.getName()));
 
     for(Platform.PlatformConfiguration platformConfiguration : Platform.PlatformConfiguration.values())
     {
@@ -120,22 +196,22 @@ public class JumpN
         platform = new Platform(platformConfiguration, direction, Platform.SidewaysDirection.Left);
         if(setNewPlatform(platform))
         {
-          platformLock.unlock();
           return;
         }
 
         platform = new Platform(platformConfiguration, direction, Platform.SidewaysDirection.Right);
         if(setNewPlatform(platform))
         {
-          platformLock.unlock();
           return;
         }
       }
     }
 
-    Globals.logger.severe("No space for a platform found for " + jumpNPlayer.getName());
+    Globals.logger.warning(String.format("No space for a platform found for \'%s\'", jumpNPlayer.getName()));
 
-    jumpNPlayer.lost();
+    setState(State.Terminate);
+
+    jumpNPlayer.sendMessage(JumpNPlayer.MessageType.Negative, "There is no space for a jump'n'run here!");
   }
 
   /**
@@ -156,62 +232,58 @@ public class JumpN
     Vector checkCoords = platformCoords.clone();
     checkCoords.setY(checkCoords.getBlockY() + 3);
 
-    Globals.debug(String.format("Setting new platform at absolute: x:%d y:%d z:%d", platformCoords.getBlockX(), platformCoords.getBlockY(), platformCoords.getBlockZ()));
-
     if(!VectorHelper.isAreaAirOnly(playerCoords, checkCoords, jumpNPlayer.getWorld()))
     {
       return false;
     }
 
-    if(newPlatformLocation != null)
-    {
-      oldPlatformLocation = newPlatformLocation.clone();
-      oldPlatformMaterial = newPlatformMaterial;
-    }
+    Location newPlatformLocation = platformCoords.toLocation(jumpNPlayer.getWorld());
+    Block newBlock = newPlatformLocation.getBlock();
 
-    Block newBlock = platformCoords.toLocation(jumpNPlayer.getWorld()).getBlock();
-
-    if(!BlockHelper.isAir(newBlock.getType()))
+    if(!BlockHelper.isAir(newBlock.getType()) || (oldPlatformLocation != null && BlockHelper.isSameLocation(oldPlatformLocation, newPlatformLocation)))
     {
       return false;
     }
 
-    newPlatformLocation = newBlock.getLocation();
+    if(this.newPlatformLocation != null)
+    {
+      oldPlatformLocation = this.newPlatformLocation.clone();
+      oldPlatformMaterial = newPlatformMaterial;
+    }
+
+    this.newPlatformLocation = newPlatformLocation;
     newPlatformMaterial = newBlock.getType();
 
-    newBlock.setType(Globals.platformMaterial);
+    setBlock(newPlatformLocation, Globals.platformMaterial);
 
     return true;
   }
 
-  public void lost()
+  private void setBlock(Location platformLocation, Material platformMaterial)
   {
-    resetBlocks();
+    debug(String.format("Setting block at %d;%d;%d from %s to %s",
+                        platformLocation.getBlockX(),
+                        platformLocation.getBlockY(),
+                        platformLocation.getBlockZ(),
+                        platformLocation.getBlock().getType().name(),
+                        platformMaterial.name()));
 
-    // Calls the Lose-Event
-    LoseEvent loseEvent = new LoseEvent(jumpNPlayer.getPlayer(), score);
-    Globals.bukkitServer.getPluginManager().callEvent(loseEvent);
+    platformLocation.getBlock().setType(platformMaterial);
   }
 
-  public void won()
+  void resetBlocks()
   {
-    removeOldPlatform();
-
-    newPlatformLocation.getBlock().setType(Globals.winningPlatformMaterial);
-
-    // Calls the Win-Event
-    WinEvent winEvent = new WinEvent(jumpNPlayer.getPlayer());
-    Globals.bukkitServer.getPluginManager().callEvent(winEvent);
-  }
-
-  private void resetBlocks()
-  {
-    removeOldPlatform();
+    resetOldPlatform();
 
     if(newPlatformLocation != null)
     {
-      newPlatformLocation.getBlock().setType(newPlatformMaterial);
+      setBlock(newPlatformLocation, newPlatformMaterial);
     }
+  }
+
+  public static ArrayList<JumpN> getJumpNList()
+  {
+    return jumpNList;
   }
 
   public Location getOldPlatformLocation()
@@ -227,5 +299,10 @@ public class JumpN
   public ReentrantLock getPlatformLock()
   {
     return platformLock;
+  }
+
+  private void debug(String message)
+  {
+    Globals.debug(jumpNPlayer.getName(), message);
   }
 }

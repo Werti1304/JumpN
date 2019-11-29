@@ -5,6 +5,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import org.werti.jumpn.JumpN;
 import org.werti.jumpn.JumpNPlayer;
 
 public class CommandJumpN implements CommandExecutor
@@ -21,17 +22,16 @@ public class CommandJumpN implements CommandExecutor
 
     Player player = (Player)commandSender;
 
-    JumpNPlayer jumpNPlayer = JumpNPlayer.GetJumpNPlayer(player);
+    JumpN jumpN = JumpN.getFrom(player);
 
-    if(jumpNPlayer!= null)
+    if(jumpN!= null)
     {
-      // TODO: Add String-Resource or sth
-      jumpNPlayer.sendMessage(JumpNPlayer.MessageType.Error, "You can't start 2 JumpNRuns while your first one isn't even finished!");
+      jumpN.jumpNPlayer.sendMessage(JumpNPlayer.MessageType.Error, "You can't start 2 JumpNRuns while your first one isn't even finished!");
       return true;
     }
 
-    JumpNPlayer newJumpNPlayer = JumpNPlayer.Add(player);
-    newJumpNPlayer.start();
+    JumpN newJumpN = new JumpN(player);
+    newJumpN.setState(JumpN.State.Running);
 
     return true;
   }
