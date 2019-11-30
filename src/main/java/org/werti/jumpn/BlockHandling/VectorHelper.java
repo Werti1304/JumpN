@@ -7,6 +7,8 @@ import org.werti.jumpn.JumpNPlayer;
 
 public class VectorHelper
 {
+  private static final Vector halfABlock = new Vector(0.5, 0.5, 0.5);
+
   /**
    * Adds a relative platform to the absolute position of a player
    */
@@ -16,7 +18,8 @@ public class VectorHelper
 
     Vector relativeCoords = AdjustCoordinatesToDirection(platform);
 
-    Vector absoluteCoords = playerLocation.toVector();
+    Vector absoluteCoords = new Vector(playerLocation.getBlockX(), playerLocation.getBlockY(), playerLocation.getBlockZ()).add(halfABlock);
+
     absoluteCoords.add(relativeCoords);
 
     return absoluteCoords;

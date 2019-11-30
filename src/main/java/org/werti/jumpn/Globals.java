@@ -2,6 +2,7 @@ package org.werti.jumpn;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.Server;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
@@ -33,6 +34,8 @@ public class Globals
   public static final int winScore = 10;
 
   public static final int maxRandomPlatformTries = 10;
+
+  public static final long tick = 20;
 
   public static final Material platformMaterial = Material.GLASS;
   public static final Material winningPlatformMaterial = Material.GOLD_BLOCK;

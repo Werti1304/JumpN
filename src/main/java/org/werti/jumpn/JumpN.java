@@ -1,11 +1,18 @@
 package org.werti.jumpn;
 
 import jdk.internal.jline.internal.Nullable;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Sound;
+import org.bukkit.Particle;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.type.Bed;
 import org.bukkit.entity.Player;
+import org.bukkit.material.Redstone;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import org.werti.jumpn.BlockHandling.BlockHelper;
 import org.werti.jumpn.BlockHandling.Platform;
@@ -17,6 +24,7 @@ import org.werti.jumpn.Events.Jumpn.WinEvent;
 
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class JumpN
@@ -28,6 +36,13 @@ public class JumpN
   public JumpNPlayer jumpNPlayer;
 
   private int score = 0;
+
+  private TextComponent textComponent = new TextComponent();
+
+  private BukkitTask actionBarTask;
+  private BukkitTask particleTask;
+
+  private Random random = new Random();
 
   public State getState()
   {
@@ -61,6 +76,10 @@ public class JumpN
 
     jumpNList.add(this);
 
+    Color color = Color.fromBGR(random.nextInt(255), random.nextInt(255),random.nextInt(255));
+
+    dustOptions = new Particle.DustOptions(color, 5);
+
     platformLock = new ReentrantLock();
   }
 
@@ -71,6 +90,20 @@ public class JumpN
     if(state == State.Running)
     {
       setState(State.Terminate);
+    }
+
+    // As long as the state is idle, there is no actionBarTask to cancel yet.
+    Globals.bukkitServer.getScheduler().runTaskLater(Globals.plugin, () ->
+    {
+      if(actionBarTask != null)
+      {
+        actionBarTask.cancel();
+      }
+    }, Globals.tick * 3);
+
+    if(particleTask != null)
+    {
+      particleTask.cancel();
     }
   }
 
@@ -96,18 +129,34 @@ public class JumpN
       case Idle:
         break;
       case Running:
-        // Calls the Start-Event
-        StartEvent startEvent = new StartEvent(jumpNPlayer.getPlayer());
-        Globals.bukkitServer.getPluginManager().callEvent(startEvent);
-
         platformLock.lock();
-        trySettingNewPlatform();
+        if(trySettingNewPlatform())
+        {
+          // Calls the Start-Event
+          StartEvent startEvent = new StartEvent(jumpNPlayer.getPlayer());
+          Globals.bukkitServer.getPluginManager().callEvent(startEvent);
+        }
+        else
+        {
+          updateActionBar(ChatColor.RED, "Not enough space!");
+
+          Globals.logger.warning(String.format("No space for a platform found for \'%s\'", jumpNPlayer.getName()));
+
+          jumpNPlayer.sendMessage(JumpNPlayer.MessageType.Negative, "There is no space for a jump'n'run here!");
+
+          setState(State.Terminate);
+        }
         platformLock.unlock();
+
+        enableActionBar();
+        enableParticles();
         break;
       case Win:
         resetOldPlatform();
 
         setBlock(newPlatformLocation, Globals.winningPlatformMaterial);
+
+        dustOptions = new Particle.DustOptions(Color.YELLOW, 5);
 
         // Calls the Win-Event
         WinEvent winEvent = new WinEvent(jumpNPlayer.getPlayer());
@@ -138,26 +187,30 @@ public class JumpN
     // Next platform was reached, so we increment the score
     score++;
 
-    // Calls the ReachedPlatform-Event
-    PlatformReachedEvent reachedPlatformEvent = new PlatformReachedEvent(jumpNPlayer.getPlayer(), score);
-    Globals.bukkitServer.getPluginManager().callEvent(reachedPlatformEvent);
-
     Player player = jumpNPlayer.getPlayer();
 
     if(score == Globals.winScore)
     {
-      player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1.f);
       setState(State.Win);
       return;
     }
     else
     {
-      player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.f);
+      // Calls the ReachedPlatform-Event
+      PlatformReachedEvent reachedPlatformEvent = new PlatformReachedEvent(jumpNPlayer.getPlayer(), score);
+      Globals.bukkitServer.getPluginManager().callEvent(reachedPlatformEvent);
     }
 
     resetOldPlatform();
 
-    trySettingNewPlatform();
+    if(!trySettingNewPlatform())
+    {
+      updateActionBar(ChatColor.RED, "Not enough space!");
+
+      Globals.logger.warning(String.format("No space for a platform found for \'%s\'", jumpNPlayer.getName()));
+
+      setState(State.Terminate);
+    }
   }
 
   /**
@@ -174,14 +227,14 @@ public class JumpN
     oldPlatformMaterial = null;
   }
 
-  private void trySettingNewPlatform()
+  private boolean trySettingNewPlatform()
   {
     // Firstly, try to generate a right platform by trying 50 random platform configurations
     for (int i = 0; i < Globals.maxRandomPlatformTries; i++)
     {
       if(setNewPlatform())
       {
-        return;
+        return true;
       }
     }
 
@@ -196,22 +249,17 @@ public class JumpN
         platform = new Platform(platformConfiguration, direction, Platform.SidewaysDirection.Left);
         if(setNewPlatform(platform))
         {
-          return;
+          return true;
         }
 
         platform = new Platform(platformConfiguration, direction, Platform.SidewaysDirection.Right);
         if(setNewPlatform(platform))
         {
-          return;
+          return true;
         }
       }
     }
-
-    Globals.logger.warning(String.format("No space for a platform found for \'%s\'", jumpNPlayer.getName()));
-
-    setState(State.Terminate);
-
-    jumpNPlayer.sendMessage(JumpNPlayer.MessageType.Negative, "There is no space for a jump'n'run here!");
+    return false;
   }
 
   /**
@@ -268,7 +316,11 @@ public class JumpN
                         platformLocation.getBlock().getType().name(),
                         platformMaterial.name()));
 
-    platformLocation.getBlock().setType(platformMaterial);
+    // Only set the block for one player
+    jumpNPlayer.getPlayer().sendBlockChange(platformLocation, platformMaterial.createBlockData());
+
+    // Set actual block:
+    //platformLocation.getBlock().setType(platformMaterial);
   }
 
   void resetBlocks()
@@ -281,9 +333,60 @@ public class JumpN
     }
   }
 
+  private  void enableParticles()
+  {
+    particleTask = Globals.bukkitServer.getScheduler().runTaskTimer(Globals.plugin, this::sendParticles, 0, Globals.tick / 2);
+  }
+
+  private Particle.DustOptions dustOptions;
+  private static final double particleSpreadVertically = 0.1;
+  private static final double particleSpreadHorizontally = 0.5;
+  private static int count = 10;
+  private static double speed = 0;
+
+  private void sendParticles()
+  {
+    if(oldPlatformLocation != null)
+    {
+      jumpNPlayer.getWorld().spawnParticle(Particle.REDSTONE, oldPlatformLocation, count, particleSpreadHorizontally, particleSpreadVertically, particleSpreadHorizontally, speed, dustOptions);
+    }
+
+    if(newPlatformLocation != null)
+    {
+      jumpNPlayer.getWorld().spawnParticle(Particle.REDSTONE, newPlatformLocation, count, particleSpreadHorizontally, particleSpreadVertically, particleSpreadHorizontally, speed, dustOptions);
+    }
+  }
+
+  /**
+   * Starts a timer that repeats the current message (textcomponent), so that the actionbar always stays the same
+   */
+  private void enableActionBar()
+  {
+    actionBarTask = Globals.bukkitServer.getScheduler().runTaskTimer(Globals.plugin, this::sendActionBarMessage, 0, Globals.tick * 2);
+  }
+
+  private void sendActionBarMessage()
+  {
+    jumpNPlayer.getPlayer().spigot().sendMessage(ChatMessageType.ACTION_BAR, textComponent);
+  }
+
+
+  public void updateActionBar(ChatColor chatColor, String message)
+  {
+    textComponent.setColor(chatColor);
+    textComponent.setText(message);
+
+    sendActionBarMessage();
+  }
+
   public static ArrayList<JumpN> getJumpNList()
   {
     return jumpNList;
+  }
+
+  public TextComponent getTextComponent()
+  {
+    return textComponent;
   }
 
   public Location getOldPlatformLocation()
