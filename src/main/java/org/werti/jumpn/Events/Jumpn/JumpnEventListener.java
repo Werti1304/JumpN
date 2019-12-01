@@ -31,6 +31,7 @@ public class JumpnEventListener implements Listener
     Player player = platformReachedEvent.getPlayer();
     String score = Integer.toString(platformReachedEvent.getScore());
 
+    // Plays sound for reaching a new platform
     player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.f);
 
     // Shows current score in actionbar
@@ -46,8 +47,10 @@ public class JumpnEventListener implements Listener
   {
     Player player = winEvent.getPlayer();
 
+    // Plays level-up sound for winning
     player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1.f);
 
+    // Shows "You win!" in the actionbar
     JumpN jumpN = JumpN.getFrom(player);
     jumpN.updateActionBar(net.md_5.bungee.api.ChatColor.GREEN, "You win!");
 
@@ -60,8 +63,10 @@ public class JumpnEventListener implements Listener
   {
     Player player = loseEvent.getPlayer();
 
+    // Plays sound for loosing
     player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_BREAK, 0.5f, 1.f);
 
+    // Shows lose-message in the actionbar
     JumpN jumpN = JumpN.getFrom(player);
     jumpN.updateActionBar(net.md_5.bungee.api.ChatColor.RED, "You lost with a score of " + loseEvent.getScore() + "!");
 

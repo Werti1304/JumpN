@@ -5,7 +5,7 @@ import org.werti.jumpn.Globals;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Platform
 {
@@ -75,8 +75,6 @@ public class Platform
     int probability;
     int iterativeprobability;
 
-    private static final Random random = new Random();
-
     /**
      * @param forwardOffset
      * @param heightOffset
@@ -121,7 +119,7 @@ public class Platform
 
     private static PlatformConfiguration GetRandom()
     {
-      int rnd = random.nextInt(probabilityCount) + 1;
+      int rnd = ThreadLocalRandom.current().nextInt(probabilityCount) + 1;
 
       for(PlatformConfiguration platformConfiguration : PlatformConfiguration.values())
       {
@@ -146,11 +144,10 @@ public class Platform
 
     private static final List<Direction> LIST = Collections.unmodifiableList(Arrays.asList(values()));
     private static final int SIZE = LIST.size();
-    private static final Random RANDOM = new Random();
 
     public static Direction GetRandom()
     {
-      return LIST.get(RANDOM.nextInt(SIZE));
+      return LIST.get(ThreadLocalRandom.current().nextInt(SIZE));
     }
   }
 
@@ -163,12 +160,16 @@ public class Platform
 
     private static final List<SidewaysDirection> LIST = Collections.unmodifiableList(Arrays.asList(values()));
     private static final int SIZE = LIST.size();
-    private static final Random RANDOM = new Random();
 
     // Return Left or Right random, None is not needed
     public static SidewaysDirection GetRandom()
     {
-      return LIST.get(RANDOM.nextInt(SIZE - 1));
+      return LIST.get(ThreadLocalRandom.current().nextInt(SIZE - 1));
     }
+  }
+
+  public static int GetRandomStartingHeight()
+  {
+    return ThreadLocalRandom.current().nextInt(Globals.maxHeight - Globals.minHeight) + Globals.minHeight;
   }
 }

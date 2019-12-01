@@ -1,7 +1,6 @@
 package org.werti.jumpn;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.werti.jumpn.Commands.CommandJumpN;
-import org.werti.jumpn.Commands.CommandTest;
 import org.werti.jumpn.Events.Jumpn.JumpnEventListener;
 import org.werti.jumpn.Events.OnMove;
 
@@ -59,9 +58,11 @@ public class Main extends JavaPlugin
   private void registerCommands()
   {
     Objects.requireNonNull(this.getCommand("jumpn")).setExecutor(new CommandJumpN());
-    Objects.requireNonNull(this.getCommand("test")).setExecutor(new CommandTest());
   }
 
+  /**
+   * Resets all blocks for all JumpN players, so they don't see blocks that aren't even registered for the plugin anymore
+   */
   private void resetAllBlocks()
   {
     for(JumpN jumpN : JumpN.getJumpNList())

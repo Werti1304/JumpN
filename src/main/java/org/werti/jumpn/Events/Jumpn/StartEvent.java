@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Event that gets called when someone starts the jump'n'run.
+ * (Only gets called if the starting-platforms were generated successfully)
  */
 public class StartEvent extends Event
 {

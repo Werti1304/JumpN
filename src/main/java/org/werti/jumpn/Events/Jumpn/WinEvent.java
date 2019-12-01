@@ -7,7 +7,6 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Event that gets called once a player has successfully completed the jump'n'run.
- * TODO: Implement Scoring-System and WinEvent-Call
  */
 public class WinEvent extends Event
 {

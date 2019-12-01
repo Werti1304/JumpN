@@ -1,25 +1,23 @@
 package org.werti.jumpn;
 
-import jdk.internal.jline.internal.Nullable;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
-import java.util.ArrayList;
-import java.util.Optional;
-
 /**
- * Class for managing all players that are currently playing the jumpnrun
+ * Class for managing all players that have a running instance of JumpN
  *
- * Adding and getting could've been done dynamically, but it's not needed for our purposes
+ * Mostly used to have a expendable interface
  */
 public class JumpNPlayer
 {
-
   private Player player;
 
+  /**
+   * Types of messages and their corresponding color
+   */
   public enum MessageType
   {
     Info(ChatColor.GRAY),

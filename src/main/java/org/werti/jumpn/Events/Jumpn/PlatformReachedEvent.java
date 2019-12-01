@@ -6,7 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Event that gets called when someone looses the jump'n'run.
+ * Event that gets called when someone reaches another platform in the jump'n'run.
  */
 public class PlatformReachedEvent extends Event
 {

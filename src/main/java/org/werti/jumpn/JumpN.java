@@ -9,9 +9,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
-import org.bukkit.block.data.type.Bed;
 import org.bukkit.entity.Player;
-import org.bukkit.material.Redstone;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import org.werti.jumpn.BlockHandling.BlockHelper;
@@ -24,31 +22,48 @@ import org.werti.jumpn.Events.Jumpn.WinEvent;
 
 import java.util.ArrayList;
 import java.util.Optional;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class JumpN
 {
+  /**
+   * List of all currently running JumpNs
+   */
   private static ArrayList<JumpN> jumpNList = new ArrayList<>();
 
+  /**
+   * "Mutex" Lock, used for (more or less) thread-safeness between OnMove and Platform-Generation
+   */
   private ReentrantLock platformLock;
 
   public JumpNPlayer jumpNPlayer;
 
+  /**
+   * Current score of player
+   */
   private int score = 0;
 
-  private TextComponent textComponent = new TextComponent();
+  private TextComponent actionBarTextComponent = new TextComponent();
 
+  /**
+   * BukkitTask responsible for the actionBar
+   */
   private BukkitTask actionBarTask;
-  private BukkitTask particleTask;
 
-  private Random random = new Random();
+  /**
+   * BukkitTask responsible for particle-generation
+   */
+  private BukkitTask particleTask;
 
   public State getState()
   {
     return state;
   }
 
+  /**
+   * Possible States of JumpN
+   */
   public enum State
   {
     Idle,
@@ -61,28 +76,34 @@ public class JumpN
   private State state = State.Idle;
 
   @Nullable
-  private Location oldPlatformLocation;
+  private Location currentPlatformLocation;
   @Nullable
-  private Material oldPlatformMaterial;
+  private Material currentPlatformMaterial;
 
   @Nullable
   private Location newPlatformLocation;
   @Nullable
   private Material newPlatformMaterial;
 
+  /**
+   * @param player Generates new JumpN instance for a player (jump'n'run is idle at this point)
+   */
   public JumpN(Player player)
   {
     this.jumpNPlayer = new JumpNPlayer(player);
 
     jumpNList.add(this);
 
-    Color color = Color.fromBGR(random.nextInt(255), random.nextInt(255),random.nextInt(255));
+    Color color = Color.fromBGR(ThreadLocalRandom.current().nextInt(255), ThreadLocalRandom.current().nextInt(255), ThreadLocalRandom.current().nextInt(255));
 
     dustOptions = new Particle.DustOptions(color, 5);
 
     platformLock = new ReentrantLock();
   }
 
+  /**
+   * Destructor of JumpN Class
+   */
   public void tearDown()
   {
     jumpNList.remove(this);
@@ -107,6 +128,12 @@ public class JumpN
     }
   }
 
+  /**
+   * Returns the JumpN of a player (if existent)
+   * Wanted to try something new instead of a ol' boring for-loop
+   * @param player Player who started the JumpN
+   * @return JumpN of the player
+   */
   @Nullable
   public static JumpN getFrom(Player player)
   {
@@ -118,9 +145,16 @@ public class JumpN
     return result.orElse(null);
   }
 
+  /**
+   * Set the state of the jump'n'run (NOT only a setter!)
+   * E.g. if you want the win-sequence to be activated, just call this function with State.Win
+   * @param state New State
+   */
   public void setState(State state)
   {
     debug(String.format("Setting JumpN-State from %s to %s", this.state.name(), state.name()));
+
+    State previousState = this.state;
 
     this.state = state;
 
@@ -130,11 +164,16 @@ public class JumpN
         break;
       case Running:
         platformLock.lock();
-        if(trySettingNewPlatform())
+
+        if(trySettingStartingPlatform() && trySettingNewPlatform())
         {
+          teleportPlayerToStartingPlatform();
+
           // Calls the Start-Event
           StartEvent startEvent = new StartEvent(jumpNPlayer.getPlayer());
           Globals.bukkitServer.getPluginManager().callEvent(startEvent);
+
+          enableParticles();
         }
         else
         {
@@ -146,10 +185,9 @@ public class JumpN
 
           setState(State.Terminate);
         }
-        platformLock.unlock();
-
         enableActionBar();
-        enableParticles();
+
+        platformLock.unlock();
         break;
       case Win:
         resetOldPlatform();
@@ -158,22 +196,31 @@ public class JumpN
 
         dustOptions = new Particle.DustOptions(Color.YELLOW, 5);
 
+        // Make our winning platform the new platform
+        currentPlatformLocation = newPlatformLocation.clone();
+        currentPlatformMaterial = newPlatformMaterial;
+
+        // There is no new platform anymore
+        newPlatformLocation = null;
+        newPlatformMaterial = null;
+
         // Calls the Win-Event
         WinEvent winEvent = new WinEvent(jumpNPlayer.getPlayer());
         Globals.bukkitServer.getPluginManager().callEvent(winEvent);
         break;
       case Lose:
         resetBlocks();
-
-        // Calls the Lose-Event
-        LoseEvent loseEvent = new LoseEvent(jumpNPlayer.getPlayer(), score);
-        Globals.bukkitServer.getPluginManager().callEvent(loseEvent);
-
+        if(previousState == State.Running)
+        {
+          // Calls the Lose-Event
+          LoseEvent loseEvent = new LoseEvent(jumpNPlayer.getPlayer(), score);
+          Globals.bukkitServer.getPluginManager().callEvent(loseEvent);
+        }
         tearDown();
         break;
       case Terminate:
+        // "Silent" completion of the jump'n'run
         resetBlocks();
-
         tearDown();
         break;
     }
@@ -218,15 +265,16 @@ public class JumpN
    */
   private void resetOldPlatform()
   {
-    if(oldPlatformLocation != null && oldPlatformMaterial != null)
+    if(currentPlatformLocation != null && currentPlatformMaterial != null)
     {
-      setBlock(oldPlatformLocation, oldPlatformMaterial);
+      setBlock(currentPlatformLocation, currentPlatformMaterial);
     }
-
-    oldPlatformLocation = null;
-    oldPlatformMaterial = null;
   }
 
+  /**
+   * Tries to set the new platform (if it can, it does so, if not, it returns false)
+   * @return Whether the platform was set
+   */
   private boolean trySettingNewPlatform()
   {
     // Firstly, try to generate a right platform by trying 50 random platform configurations
@@ -240,22 +288,37 @@ public class JumpN
 
     debug(String.format("Generated %d random platforms for %s, but none of them fit.", Globals.maxRandomPlatformTries, jumpNPlayer.getName()));
 
+    // Secondly, iterates through every single platform-possibility to find a platform that's possible (or at least probable) for the player to get to
     for(Platform.PlatformConfiguration platformConfiguration : Platform.PlatformConfiguration.values())
     {
       for(Platform.Direction direction : Platform.Direction.values())
       {
         Platform platform;
 
-        platform = new Platform(platformConfiguration, direction, Platform.SidewaysDirection.Left);
-        if(setNewPlatform(platform))
+        if(platformConfiguration.getSidewaysOffset() == 0)
         {
-          return true;
+          // Tries to set the platform without SidewaysDirection (none needed)
+          platform = new Platform(platformConfiguration, direction, Platform.SidewaysDirection.None);
+          if(setNewPlatform(platform))
+          {
+            return true;
+          }
         }
-
-        platform = new Platform(platformConfiguration, direction, Platform.SidewaysDirection.Right);
-        if(setNewPlatform(platform))
+        else
         {
-          return true;
+          // Tries to set the platform with Right SidewaysDirection
+          platform = new Platform(platformConfiguration, direction, Platform.SidewaysDirection.Left);
+          if(setNewPlatform(platform))
+          {
+            return true;
+          }
+
+          // Tries to set the platform with Left SidewaysDirection
+          platform = new Platform(platformConfiguration, direction, Platform.SidewaysDirection.Right);
+          if(setNewPlatform(platform))
+          {
+            return true;
+          }
         }
       }
     }
@@ -263,7 +326,33 @@ public class JumpN
   }
 
   /**
-   * Generates a new random platform.
+   * Tries to set the starting platform x blocks over the player while giving him enough space
+   * @return Whether the platform was placed
+   */
+  private boolean trySettingStartingPlatform()
+  {
+    int height = Platform.GetRandomStartingHeight();
+    Location playerLocation = jumpNPlayer.getLocation();
+
+    // Start checking from head-height of player...
+    Vector startingVector = playerLocation.clone().add(0, 1, 0).toVector();
+    // ...all the way up to 3 over the block so the player always has to have enough space to jump freely
+    Vector maxHeightPlayerVector = playerLocation.clone().add(0, height + 3, 0).toVector();
+
+    if(VectorHelper.isAreaAirOnly( startingVector, maxHeightPlayerVector, jumpNPlayer.getWorld()))
+    {
+      // Set current platform to the location of the player + the height where the platform should be
+      currentPlatformLocation = playerLocation.clone().add(0, height, 0);
+      currentPlatformMaterial = currentPlatformLocation.getBlock().getType();
+
+      setBlock(currentPlatformLocation, Globals.platformMaterial);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Generates a new random platform and sets it.
    * @return whether the platform has been placed.
    */
   private boolean setNewPlatform()
@@ -271,9 +360,20 @@ public class JumpN
     return setNewPlatform(Platform.GetRandomPlatform());
   }
 
+  /**
+   * Sets new platform
+   * @param platform platform to be set
+   * @return Whether the platform has been set (enough space)
+   */
   private boolean setNewPlatform(Platform platform)
   {
-    Vector platformCoords = VectorHelper.AdjustJump(jumpNPlayer, platform);
+    if(this.newPlatformLocation != null)
+    {
+      currentPlatformLocation = this.newPlatformLocation.clone();
+      currentPlatformMaterial = newPlatformMaterial;
+    }
+
+    Vector platformCoords = VectorHelper.AdjustJump(currentPlatformLocation, platform);
 
     Vector playerCoords = jumpNPlayer.toVector();
 
@@ -288,15 +388,9 @@ public class JumpN
     Location newPlatformLocation = platformCoords.toLocation(jumpNPlayer.getWorld());
     Block newBlock = newPlatformLocation.getBlock();
 
-    if(!BlockHelper.isAir(newBlock.getType()) || (oldPlatformLocation != null && BlockHelper.isSameLocation(oldPlatformLocation, newPlatformLocation)))
+    if(!BlockHelper.isAir(newBlock.getType()) || (currentPlatformLocation != null && BlockHelper.isSameLocation(currentPlatformLocation, newPlatformLocation)))
     {
       return false;
-    }
-
-    if(this.newPlatformLocation != null)
-    {
-      oldPlatformLocation = this.newPlatformLocation.clone();
-      oldPlatformMaterial = newPlatformMaterial;
     }
 
     this.newPlatformLocation = newPlatformLocation;
@@ -307,6 +401,11 @@ public class JumpN
     return true;
   }
 
+  /**
+   * Sets block to a new material (only! for jumpnplayer, everyone else won't see it)
+   * @param platformLocation location of block to change
+   * @param platformMaterial new material for the block
+   */
   private void setBlock(Location platformLocation, Material platformMaterial)
   {
     debug(String.format("Setting block at %d;%d;%d from %s to %s",
@@ -323,6 +422,9 @@ public class JumpN
     //platformLocation.getBlock().setType(platformMaterial);
   }
 
+  /**
+   * Changes blocks back to their former self (:p)
+   */
   void resetBlocks()
   {
     resetOldPlatform();
@@ -333,7 +435,11 @@ public class JumpN
     }
   }
 
-  private  void enableParticles()
+
+  /**
+   * Activates timer for generating particles
+   */
+  private void enableParticles()
   {
     particleTask = Globals.bukkitServer.getScheduler().runTaskTimer(Globals.plugin, this::sendParticles, 0, Globals.tick / 2);
   }
@@ -344,12 +450,12 @@ public class JumpN
   private static int count = 10;
   private static double speed = 0;
 
+  /**
+   * Generates particles (which everyone can see) at the current jump'n'run blocks
+   */
   private void sendParticles()
   {
-    if(oldPlatformLocation != null)
-    {
-      jumpNPlayer.getWorld().spawnParticle(Particle.REDSTONE, oldPlatformLocation, count, particleSpreadHorizontally, particleSpreadVertically, particleSpreadHorizontally, speed, dustOptions);
-    }
+    jumpNPlayer.getWorld().spawnParticle(Particle.REDSTONE, currentPlatformLocation, count, particleSpreadHorizontally, particleSpreadVertically, particleSpreadHorizontally, speed, dustOptions);
 
     if(newPlatformLocation != null)
     {
@@ -367,16 +473,26 @@ public class JumpN
 
   private void sendActionBarMessage()
   {
-    jumpNPlayer.getPlayer().spigot().sendMessage(ChatMessageType.ACTION_BAR, textComponent);
+    jumpNPlayer.getPlayer().spigot().sendMessage(ChatMessageType.ACTION_BAR, actionBarTextComponent);
   }
 
 
+  /**
+   * Instantaneously updates action bar to new color/message
+   * @param chatColor new Color
+   * @param message new Message
+   */
   public void updateActionBar(ChatColor chatColor, String message)
   {
-    textComponent.setColor(chatColor);
-    textComponent.setText(message);
+    actionBarTextComponent.setColor(chatColor);
+    actionBarTextComponent.setText(message);
 
     sendActionBarMessage();
+  }
+
+  private void teleportPlayerToStartingPlatform()
+  {
+    jumpNPlayer.getPlayer().teleport(currentPlatformLocation.clone().add(0, 2, 0));
   }
 
   public static ArrayList<JumpN> getJumpNList()
@@ -384,14 +500,14 @@ public class JumpN
     return jumpNList;
   }
 
-  public TextComponent getTextComponent()
+  public TextComponent getActionBarTextComponent()
   {
-    return textComponent;
+    return actionBarTextComponent;
   }
 
-  public Location getOldPlatformLocation()
+  public Location getCurrentPlatformLocation()
   {
-    return oldPlatformLocation;
+    return currentPlatformLocation;
   }
 
   public Location getNewPlatformLocation()

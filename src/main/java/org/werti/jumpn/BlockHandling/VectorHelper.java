@@ -3,7 +3,6 @@ package org.werti.jumpn.BlockHandling;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.util.Vector;
-import org.werti.jumpn.JumpNPlayer;
 
 public class VectorHelper
 {
@@ -12,13 +11,11 @@ public class VectorHelper
   /**
    * Adds a relative platform to the absolute position of a player
    */
-  public static Vector AdjustJump(JumpNPlayer player, Platform platform)
+  public static Vector AdjustJump(Location oldPlatform, Platform newPlatform)
   {
-    Location playerLocation = player.getLocation().clone();
+    Vector relativeCoords = AdjustCoordinatesToDirection(newPlatform);
 
-    Vector relativeCoords = AdjustCoordinatesToDirection(platform);
-
-    Vector absoluteCoords = new Vector(playerLocation.getBlockX(), playerLocation.getBlockY(), playerLocation.getBlockZ()).add(halfABlock);
+    Vector absoluteCoords = new Vector(oldPlatform.getBlockX(), oldPlatform.getBlockY(), oldPlatform.getBlockZ()).add(halfABlock);
 
     absoluteCoords.add(relativeCoords);
 
@@ -29,7 +26,7 @@ public class VectorHelper
   {
     int x = 0;
     // Height = 0 should mean under the player, not inside him, so we have to correct the y-coordinate by -1
-    int y = platform.platformConfiguration.getHeightOffset() - 1;
+    int y = platform.platformConfiguration.getHeightOffset();
     int z = 0;
 
     int forwardOffset = platform.platformConfiguration.forwardOffset;

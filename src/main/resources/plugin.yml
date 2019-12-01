@@ -1,5 +1,5 @@
 name: JumpN
-version: "0.1"
+version: "0.2"
 description: JumpNRun-Plugin
 author: Werti
 main: org.werti.jumpn.Main
@@ -12,7 +12,3 @@ commands:
     permission: jumpn.use
     aliases:
       - jn
-  test:
-    description: Test-Command for just.. anything(debug-wise)
-    usage: /test
-    permission: jumpn.admin

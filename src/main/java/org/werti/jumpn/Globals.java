@@ -2,10 +2,8 @@ package org.werti.jumpn;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.Particle;
 import org.bukkit.Server;
 import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.logging.Logger;
@@ -39,6 +37,10 @@ public class Globals
 
   public static final Material platformMaterial = Material.GLASS;
   public static final Material winningPlatformMaterial = Material.GOLD_BLOCK;
+
+  public static final int minHeight = 5;
+  public static final int maxHeight = 8;
+
 
   public static void debug(String playerName, String message)
   {
