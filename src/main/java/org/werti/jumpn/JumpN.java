@@ -375,12 +375,10 @@ public class JumpN
 
     Vector platformCoords = VectorHelper.AdjustJump(currentPlatformLocation, platform);
 
-    Vector playerCoords = jumpNPlayer.toVector();
-
     Vector checkCoords = platformCoords.clone();
     checkCoords.setY(checkCoords.getBlockY() + 3);
 
-    if(!VectorHelper.isAreaAirOnly(playerCoords, checkCoords, jumpNPlayer.getWorld()))
+    if(!VectorHelper.isAreaAirOnly(currentPlatformLocation.toVector(), checkCoords, jumpNPlayer.getWorld()))
     {
       return false;
     }

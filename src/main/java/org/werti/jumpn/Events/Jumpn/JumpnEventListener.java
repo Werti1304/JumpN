@@ -15,7 +15,14 @@ public class JumpnEventListener implements Listener
   @EventHandler(priority = EventPriority.HIGH)
   public void onStart(StartEvent startEvent)
   {
-    JumpN jumpN = JumpN.getFrom(startEvent.getPlayer());
+    Player player = startEvent.getPlayer();
+
+    JumpN jumpN = JumpN.getFrom(player);
+
+    // Plays sound for starting a new jumpnrun
+    player.playSound(player.getLocation(), Sound.BLOCK_STONE_BUTTON_CLICK_ON, 0.5f, 1.f);
+
+    // Shows started jumpnrun message in the actionbar
     jumpN.updateActionBar(net.md_5.bungee.api.ChatColor.YELLOW, "Started new jump'n'run, have fun!");
   }
 
