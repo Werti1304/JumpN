@@ -64,6 +64,7 @@ public class OnMove implements Listener
       }
       else if(state == JumpN.State.Win)
       {
+        // Spawns firework as an additional award for completion
         spawnFirework(jumpN.getCurrentPlatformLocation());
 
         jumpN.setState(JumpN.State.Terminate);

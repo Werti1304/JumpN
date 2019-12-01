@@ -1,14 +1,11 @@
 package org.werti.jumpn.Events.Jumpn;
 
-import org.bukkit.ChatColor;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.werti.jumpn.Globals;
 import org.werti.jumpn.JumpN;
-import org.werti.jumpn.JumpNPlayer;
 
 /**
  * All nonessential components to the Jump'n'run are covered here (e.g. sounds, messages, etc.)
@@ -20,9 +17,6 @@ public class JumpnEventListener implements Listener
   {
     JumpN jumpN = JumpN.getFrom(startEvent.getPlayer());
     jumpN.updateActionBar(net.md_5.bungee.api.ChatColor.YELLOW, "Started new jump'n'run, have fun!");
-
-    JumpNPlayer.sendMessage(startEvent.getPlayer(), JumpNPlayer.MessageType.Info,
-                            String.format("You've started a new Jump and Run! The score you must reach to win is %d", Globals.winScore));
   }
 
   @EventHandler(priority = EventPriority.HIGH)
@@ -37,9 +31,6 @@ public class JumpnEventListener implements Listener
     // Shows current score in actionbar
     JumpN jumpN = JumpN.getFrom(player);
     jumpN.updateActionBar(net.md_5.bungee.api.ChatColor.YELLOW, score);
-
-    JumpNPlayer.sendMessage(player, JumpNPlayer.MessageType.Info,
-                            String.format("Platform %s reached!", score));
   }
 
   @EventHandler(priority = EventPriority.HIGH)
@@ -53,9 +44,6 @@ public class JumpnEventListener implements Listener
     // Shows "You win!" in the actionbar
     JumpN jumpN = JumpN.getFrom(player);
     jumpN.updateActionBar(net.md_5.bungee.api.ChatColor.GREEN, "You win!");
-
-    JumpNPlayer.sendMessage(player, JumpNPlayer.MessageType.Positive,
-                            "You won! Congratulations!");
   }
 
   @EventHandler(priority = EventPriority.HIGH)
@@ -68,12 +56,6 @@ public class JumpnEventListener implements Listener
 
     // Shows lose-message in the actionbar
     JumpN jumpN = JumpN.getFrom(player);
-    jumpN.updateActionBar(net.md_5.bungee.api.ChatColor.RED, "You lost with a score of " + loseEvent.getScore() + "!");
-
-    JumpNPlayer.sendMessage(player, JumpNPlayer.MessageType.Negative,
-                            String.format("You lost with a score of %s%d%s!",
-                                          ChatColor.GOLD,
-                                          loseEvent.getScore(),
-                                          JumpNPlayer.MessageType.Negative.getColor()));
+    jumpN.updateActionBar(net.md_5.bungee.api.ChatColor.RED, String.format("You lost with a score of %d!", loseEvent.getScore()));
   }
 }
