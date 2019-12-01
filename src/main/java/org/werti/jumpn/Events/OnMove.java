@@ -1,11 +1,16 @@
 package org.werti.jumpn.Events;
 
+import org.bukkit.Color;
+import org.bukkit.FireworkEffect;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Firework;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.inventory.meta.FireworkMeta;
 import org.werti.jumpn.Globals;
 import org.werti.jumpn.JumpN;
 
@@ -59,8 +64,25 @@ public class OnMove implements Listener
       }
       else if(state == JumpN.State.Win)
       {
+        spawnFirework(jumpN.getCurrentPlatformLocation());
+
         jumpN.setState(JumpN.State.Terminate);
       }
     }
+  }
+
+  /**
+   * To celebrate victory, spawns a last firework at destruction of the winning-block
+   */
+  private static void spawnFirework(Location location)
+  {
+    Firework firework = (Firework)location.getWorld().spawnEntity(location, EntityType.FIREWORK);
+    FireworkMeta fireworkMeta = firework.getFireworkMeta();
+
+    fireworkMeta.setPower(0);
+    fireworkMeta.addEffect(FireworkEffect.builder().withColor(Color.YELLOW).build());
+
+    firework.setFireworkMeta(fireworkMeta);
+    firework.detonate();
   }
 }
